@@ -14,6 +14,7 @@
 package com.github.liyue2008.rpc.serialize.impl;
 
 /**
+ *
  * @author LiYue
  * Date: 2019/9/20
  */
