@@ -38,6 +38,7 @@ public class RequestHandlerRegistry {
 
     private RequestHandlerRegistry() {
         Collection<RequestHandler> requestHandlers = ServiceSupport.loadAll(RequestHandler.class);
+        // 使用了一个命令注册机制，让这个路由分发的过程省略了大量的 if-else 或者是 switch 代码
         for (RequestHandler requestHandler : requestHandlers) {
             handlerMap.put(requestHandler.type(), requestHandler);
             logger.info("Load request handler, type: {}, class: {}.", requestHandler.type(), requestHandler.getClass().getCanonicalName());

@@ -2,9 +2,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,6 +32,10 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
+ * LocalFileNameService，它的实现比较简单，就是去读写一个本地文件，实现注册服务 registerService 方法时，
+ * 把服务提供者保存到本地文件中；实现查找服务 lookupService 时，就是去本地文件中读出所有的服务提供者，找到
+ * 对应的服务提供者，然后返回。
+ *
  * @author LiYue
  * Date: 2019/9/20
  */
@@ -47,7 +51,7 @@ public class LocalFileNameService implements NameService {
 
     @Override
     public void connect(URI nameServiceUri) {
-        if(schemes.contains(nameServiceUri.getScheme())) {
+        if (schemes.contains(nameServiceUri.getScheme())) {
             file = new File(nameServiceUri);
         } else {
             throw new RuntimeException("Unsupported scheme!");
@@ -57,14 +61,15 @@ public class LocalFileNameService implements NameService {
     @Override
     public synchronized void registerService(String serviceName, URI uri) throws IOException {
         logger.info("Register service: {}, uri: {}.", serviceName, uri);
-        try(RandomAccessFile raf = new RandomAccessFile(file, "rw");
-            FileChannel fileChannel = raf.getChannel()) {
+        try (RandomAccessFile raf = new RandomAccessFile(file, "rw");
+             FileChannel fileChannel = raf.getChannel()) {
+            // 服务提供者保存的本地文件它是一个共享资源，它会被 RPC 框架所有的客户端和服务端并发读写，需要加锁操作
             FileLock lock = fileChannel.lock();
             try {
                 int fileLength = (int) raf.length();
                 Metadata metadata;
                 byte[] bytes;
-                if(fileLength > 0) {
+                if (fileLength > 0) {
                     bytes = new byte[(int) raf.length()];
                     ByteBuffer buffer = ByteBuffer.wrap(bytes);
                     while (buffer.hasRemaining()) {
@@ -76,7 +81,7 @@ public class LocalFileNameService implements NameService {
                     metadata = new Metadata();
                 }
                 List<URI> uris = metadata.computeIfAbsent(serviceName, k -> new ArrayList<>());
-                if(!uris.contains(uri)) {
+                if (!uris.contains(uri)) {
                     uris.add(uri);
                 }
                 logger.info(metadata.toString());
@@ -95,16 +100,16 @@ public class LocalFileNameService implements NameService {
     @Override
     public URI lookupService(String serviceName) throws IOException {
         Metadata metadata;
-        try(RandomAccessFile raf = new RandomAccessFile(file, "rw");
-            FileChannel fileChannel = raf.getChannel()) {
+        try (RandomAccessFile raf = new RandomAccessFile(file, "rw");
+             FileChannel fileChannel = raf.getChannel()) {
             FileLock lock = fileChannel.lock();
             try {
-                byte [] bytes = new byte[(int) raf.length()];
+                byte[] bytes = new byte[(int) raf.length()];
                 ByteBuffer buffer = ByteBuffer.wrap(bytes);
                 while (buffer.hasRemaining()) {
                     fileChannel.read(buffer);
                 }
-                metadata = bytes.length == 0? new Metadata(): SerializeSupport.parse(bytes);
+                metadata = bytes.length == 0 ? new Metadata() : SerializeSupport.parse(bytes);
                 logger.info(metadata.toString());
             } finally {
                 lock.release();
@@ -112,7 +117,7 @@ public class LocalFileNameService implements NameService {
         }
 
         List<URI> uris = metadata.get(serviceName);
-        if(null == uris || uris.isEmpty()) {
+        if (null == uris || uris.isEmpty()) {
             return null;
         } else {
             return uris.get(ThreadLocalRandom.current().nextInt(uris.size()));

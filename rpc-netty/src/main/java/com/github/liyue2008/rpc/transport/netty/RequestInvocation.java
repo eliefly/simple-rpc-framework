@@ -2,9 +2,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,6 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Netty 接收所有请求数据的处理类 RequestInvocation
+ *
  * @author LiYue
  * Date: 2019/9/20
  */
@@ -39,10 +41,12 @@ public class RequestInvocation extends SimpleChannelInboundHandler<Command> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, Command request) throws Exception {
+        // 根据请求命令的 Hdader 中的请求类型 type，去 requestHandlerRegistry 中查找对应的请求处理器 RequestHandler
         RequestHandler handler = requestHandlerRegistry.get(request.getHeader().getType());
-        if(null != handler) {
+        if (null != handler) {
+            // 调用请求处理器去处理请求，最后把结果发送给客户端
             Command response = handler.handle(request);
-            if(null != response) {
+            if (null != response) {
                 channelHandlerContext.writeAndFlush(response).addListener((ChannelFutureListener) channelFuture -> {
                     if (!channelFuture.isSuccess()) {
                         logger.warn("Write response failed!", channelFuture.cause());
@@ -63,6 +67,6 @@ public class RequestInvocation extends SimpleChannelInboundHandler<Command> {
 
         super.exceptionCaught(ctx, cause);
         Channel channel = ctx.channel();
-        if(channel.isActive())ctx.close();
+        if (channel.isActive()) ctx.close();
     }
 }

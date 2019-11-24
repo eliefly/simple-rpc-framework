@@ -2,9 +2,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,9 +30,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * 这个类不仅实现了处理客户端请求的 RequestHandler 接口，同时还实现了注册 RPC 服务 ServiceProviderRegistry
+ * 接口，也就是说，RPC 框架服务端需要实现的两个功能——注册 RPC 服务和处理客户端 RPC 请求，都是在这一个类
+ * RpcRequestHandler 中实现的
+ *
  * @author LiYue
  * Date: 2019/9/23
  */
+// @Singleton，限定这个类它是一个单例模式
 @Singleton
 public class RpcRequestHandler implements RequestHandler, ServiceProviderRegistry {
     private static final Logger logger = LoggerFactory.getLogger(RpcRequestHandler.class);
@@ -46,11 +51,11 @@ public class RpcRequestHandler implements RequestHandler, ServiceProviderRegistr
         try {
             // 查找所有已注册的服务提供方，寻找rpcRequest中需要的服务
             Object serviceProvider = serviceProviders.get(rpcRequest.getInterfaceName());
-            if(serviceProvider != null) {
+            if (serviceProvider != null) {
                 // 找到服务提供者，利用Java反射机制调用服务的对应方法
                 String arg = SerializeSupport.parse(rpcRequest.getSerializedArguments());
                 Method method = serviceProvider.getClass().getMethod(rpcRequest.getMethodName(), String.class);
-                String result = (String ) method.invoke(serviceProvider, arg);
+                String result = (String) method.invoke(serviceProvider, arg);
                 // 把结果封装成响应命令并返回
                 return new Command(new ResponseHeader(type(), header.getVersion(), header.getRequestId()), SerializeSupport.serialize(result));
             }
@@ -69,6 +74,13 @@ public class RpcRequestHandler implements RequestHandler, ServiceProviderRegistr
         return ServiceTypes.TYPE_RPC_REQUEST;
     }
 
+    /**
+     * 注册 RPC 服务
+     *
+     * @param serviceClass
+     * @param serviceProvider
+     * @param <T>
+     */
     @Override
     public synchronized <T> void addServiceProvider(Class<? extends T> serviceClass, T serviceProvider) {
         serviceProviders.put(serviceClass.getCanonicalName(), serviceProvider);
