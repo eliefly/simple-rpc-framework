@@ -14,8 +14,6 @@
 
 package com.github.liyue2008.rpc.serialize;
 
-import com.github.liyue2008.rpc.serialize.impl.Types;
-
 /**
  * 给所有序列化的实现类定义一个 Serializer 接口，所有的序列化实现类都实现这个接口
  *
@@ -52,8 +50,6 @@ public interface Serializer<T> {
 
     /**
      * 用一个字节标识对象类型，每种类型的数据应该具有不同的类型值
-     *
-     * @see Types
      */
     byte type();
 

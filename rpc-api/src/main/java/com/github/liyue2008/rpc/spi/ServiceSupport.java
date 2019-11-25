@@ -30,7 +30,8 @@ public class ServiceSupport {
 
     public synchronized static <S> S load(Class<S> service) {
         return StreamSupport.
-                stream(ServiceLoader.load(service).spliterator(), false)
+                // ServiceLoader.load(classA) 自动加载
+                        stream(ServiceLoader.load(service).spliterator(), false)
                 .map(ServiceSupport::singletonFilter)
                 .findFirst().orElseThrow(ServiceLoadException::new);
     }
